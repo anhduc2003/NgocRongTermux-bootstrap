@@ -59,6 +59,30 @@ prepare_local_jdbc_assets() {
   done
 }
 
+prepare_local_protocol_assets() {
+  local target source_url asset
+  local assets=(
+    nro/models/network/KeyHandler.class
+    nro/models/network/Collector.class
+    nro/models/network/MessageSendCollect.class
+    nro/models/network/ClientVerifier.class
+    nro/models/data/DataGame.class
+    nro/models/server/Controller.class
+  )
+  for asset in "${assets[@]}"; do
+    target="$PROJECT/termux/runtime-patches/$asset"
+    mkdir -p "$(dirname "$target")"
+    if [ -s "$CHECKOUT/termux/runtime-patches/$asset" ]; then
+      cp -f "$CHECKOUT/termux/runtime-patches/$asset" "$target"
+      continue
+    fi
+    source_url="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}/runtime-patches/$asset"
+    printf '[StartOnly] Đang bổ sung patch DragonBoy250: %s\n' "$asset"
+    curl -fsSL "$source_url" -o "$target" || return 1
+    [ -s "$target" ] || return 1
+  done
+}
+
 refresh_local_launcher() {
   local launcher_url temp_launcher
   launcher_url="${NRO_PUBLIC_LAUNCHER_URL:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only/start-existing-server.sh}"
@@ -108,8 +132,8 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
   refresh_local_launcher || true
-  if ! prepare_local_jdbc_assets; then
-    fail "Không bổ sung được JAR JDBC cho launcher cục bộ."
+  if ! prepare_local_jdbc_assets || ! prepare_local_protocol_assets; then
+    fail "Không bổ sung được asset JDBC/protocol cho launcher cục bộ."
   fi
   if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
     fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
@@ -131,7 +155,15 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
   printf '%s\n' '[StartOnly] Không có launcher cục bộ; tải payload start-only công khai.'
   if curl -fsSL "$PUBLIC_PAYLOAD_BASE/start-existing-server.sh" -o "$PROJECT/termux/start-existing-server.sh" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/compat-mysql-driver.jar" -o "$PROJECT/termux/lib/compat-mysql-driver.jar" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/mysql-connector-j-8.4.0.jar" -o "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"; then
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/mysql-connector-j-8.4.0.jar" -o "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar" \
+     && mkdir -p "$PROJECT/termux/runtime-patches" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/KeyHandler.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/KeyHandler.class" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/Collector.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/Collector.class" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/MessageSendCollect.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/MessageSendCollect.class" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/ClientVerifier.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/ClientVerifier.class" \
+     && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/data" "$PROJECT/termux/runtime-patches/nro/models/server" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/data/DataGame.class" -o "$PROJECT/termux/runtime-patches/nro/models/data/DataGame.class" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/server/Controller.class" -o "$PROJECT/termux/runtime-patches/nro/models/server/Controller.class"; then
     chmod +x "$PROJECT/termux/start-existing-server.sh"
     printf '%s\n' '[StartOnly] Đã tải payload.'
     if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
@@ -180,6 +212,9 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
   fi
   if [ -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" ]; then
     cp -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"
+  fi
+  if ! prepare_local_protocol_assets; then
+    fail "Không bổ sung được patch protocol DragonBoy250 từ repository."
   fi
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then

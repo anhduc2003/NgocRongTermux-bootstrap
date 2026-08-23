@@ -63,8 +63,18 @@ fi
 # or MariaDB data.
 if [ "$SERVER_IP" != "$CONFIG_SERVER_IP" ] || [ -n "${NRO_SERVER_IP:-}" ]; then
   sed -i -E "s|^server[.]ip=.*$|server.ip=$SERVER_IP|" "$PROJECT/Config.properties"
-  sed -i -E "s|^server[.]sv1=.*$|server.sv1=NRO 2024:$SERVER_IP:$GAME_PORT:0,0,0|" "$PROJECT/Config.properties"
+  sed -i -E "s|^server[.]sv1=.*$|server.sv1=NRO 2024:$SERVER_IP:$GAME_PORT:0|" "$PROJECT/Config.properties"
   info "Đã đồng bộ địa chỉ quảng bá trong Config.properties: ${SERVER_IP}:${GAME_PORT}"
+fi
+
+# DragonBoy250 expects comma-separated server entries followed by exactly two
+# priority bytes. Legacy installs stored `server.sv1=...:0,0,0`; Manager and
+# DataGame append their own fields, so those commas become orphan entries.
+# Normalize every legacy server.svN value before Java starts.
+if sed -i -E '/^server[.]sv[0-9]+=/{s/(,0)+[[:space:]]*$//;}' "$PROJECT/Config.properties"; then
+  info "Đã chuẩn hóa server-list cho DragonBoy250."
+else
+  fail "Không thể chuẩn hóa server-list trong $PROJECT/Config.properties."
 fi
 
 # A previously installed cc2.jar may contain the obsolete shaded Connector/J 5.1
@@ -94,6 +104,30 @@ if [ -f "$JDBC_BRIDGE" ] && [ -f "$JDBC_MODERN" ]; then
 else
   fail "Thiếu gói JDBC sửa lỗi trong launcher. Hãy chạy lại lệnh start-only mới từ GitHub."
 fi
+
+# DragonBoy250 protocol compatibility is shipped as compiled per-class patches.
+# Applying these classes in place refreshes only the existing runtime JAR; it does
+# not download/extract an archive and never touches MariaDB or SQL data.
+PROTOCOL_PATCH_DIR="$SCRIPT_DIR/runtime-patches"
+PROTOCOL_PATCHES=(
+  "nro/models/network/KeyHandler.class"
+  "nro/models/network/Collector.class"
+  "nro/models/network/MessageSendCollect.class"
+  "nro/models/data/DataGame.class"
+  "nro/models/network/ClientVerifier.class"
+  "nro/models/server/Controller.class"
+)
+command -v jar >/dev/null 2>&1 || fail "Không tìm thấy lệnh jar trong Java runtime."
+for patch in "${PROTOCOL_PATCHES[@]}"; do
+  [ -s "$PROTOCOL_PATCH_DIR/$patch" ] || fail "Thiếu patch protocol DragonBoy250: $patch"
+done
+jar_args=()
+for patch in "${PROTOCOL_PATCHES[@]}"; do
+  jar_args+=( -C "$PROTOCOL_PATCH_DIR" "$patch" )
+done
+jar uf "$PROJECT/cc2.jar" "${jar_args[@]}" \
+  || fail "Không thể cập nhật patch protocol DragonBoy250 vào cc2.jar."
+info "Đã áp dụng patch handshake/server-list/resource DragonBoy250."
 
 socket_ping() {
   mariadb-admin --no-defaults --socket="$SOCKET" -u root ping >/dev/null 2>&1 \
