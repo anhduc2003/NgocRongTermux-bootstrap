@@ -44,6 +44,24 @@ DB_PORT="${NRO_DB_PORT:-$(cfg database.port 3306)}"
 DB_NAME="$(cfg database.name ngocrong)"
 DB_USER="${NRO_DB_USER:-$(cfg database.user ngocrong_game)}"
 DB_PASS="${NRO_DB_PASS:-$(cfg database.pass '')}"
+
+# Existing installs may have been created before the metrics agent was enabled.
+# Normalize only the local agent switches; do not touch game tables or credentials.
+if grep -q '^panel\.agent\.enabled=' "$PROJECT/Config.properties"; then
+  sed -i -E 's/^panel[.]agent[.]enabled=.*/panel.agent.enabled=true/' "$PROJECT/Config.properties"
+else
+  printf '\npanel.agent.enabled=true\n' >> "$PROJECT/Config.properties"
+fi
+if ! grep -q '^panel\.agent\.host=' "$PROJECT/Config.properties"; then
+  printf 'panel.agent.host=127.0.0.1\n' >> "$PROJECT/Config.properties"
+fi
+if ! grep -q '^panel\.agent\.port=' "$PROJECT/Config.properties"; then
+  printf 'panel.agent.port=14446\n' >> "$PROJECT/Config.properties"
+fi
+if ! grep -q '^panel\.agent\.key=' "$PROJECT/Config.properties"; then
+  printf 'panel.agent.key=local-only\n' >> "$PROJECT/Config.properties"
+fi
+
 CONFIG_SERVER_IP="$(cfg server.ip 127.0.0.1)"
 SERVER_IP="${NRO_SERVER_IP:-$CONFIG_SERVER_IP}"
 CONFIG_GAME_PORT="$(cfg server.port 14445)"
