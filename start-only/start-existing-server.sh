@@ -13,8 +13,16 @@ INPUT_FIFO="$LOG_DIR/game-input"
 INPUT_PID_FILE="$LOG_DIR/game-input.pid"
 
 fail() { printf '\n[ERROR] %s\n' "$*" >&2; exit 1; }
+on_error() {
+  local code=$?
+  printf '\n[ERROR] Launcher dừng tại dòng %s: %s (mã %s)\n' "$LINENO" "$BASH_COMMAND" "$code" >&2
+  exit "$code"
+}
 info() { printf '[StartOnly] %s\n' "$*"; }
+trap on_error ERR
 
+info "Kiểm tra runtime: $PROJECT"
+info "MariaDB data directory: $DB_DATA"
 [ -d "$PROJECT" ] || fail "Chưa có $PROJECT. Hãy chạy cài đặt đầy đủ một lần."
 [ -s "$PROJECT/cc2.jar" ] || fail "Thiếu $PROJECT/cc2.jar. Runtime chưa được cài hoàn chỉnh."
 [ -d "$PROJECT/data" ] || fail "Thiếu $PROJECT/data. Runtime chưa được cài hoàn chỉnh."

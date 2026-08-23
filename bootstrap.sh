@@ -59,6 +59,23 @@ prepare_local_jdbc_assets() {
   done
 }
 
+refresh_local_launcher() {
+  local launcher_url temp_launcher
+  launcher_url="${NRO_PUBLIC_LAUNCHER_URL:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only/start-existing-server.sh}"
+  temp_launcher="$PROJECT/termux/start-existing-server.sh.download"
+  if curl -fsSL "$launcher_url" -o "$temp_launcher" \
+     && [ -s "$temp_launcher" ] \
+     && grep -q 'ServerManager' "$temp_launcher" 2>/dev/null; then
+    mv -f "$temp_launcher" "$PROJECT/termux/start-existing-server.sh"
+    chmod +x "$PROJECT/termux/start-existing-server.sh"
+    printf '%s\n' '[StartOnly] Đã đồng bộ launcher mới từ GitHub.'
+    return 0
+  fi
+  rm -f "$temp_launcher"
+  printf '%s\n' '[StartOnly] Không đồng bộ được launcher mới; sẽ thử launcher cục bộ hiện có.' >&2
+  return 1
+}
+
 case "$MODE" in
   --start-only|--start)
     command -v pkg >/dev/null 2>&1 || fail "Hãy chạy lệnh này trong Termux."
@@ -90,6 +107,7 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
    && grep -q 'ServerManager' "$PROJECT/termux/start-existing-server.sh" 2>/dev/null; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
+  refresh_local_launcher || true
   if ! prepare_local_jdbc_assets; then
     fail "Không bổ sung được JAR JDBC cho launcher cục bộ."
   fi
