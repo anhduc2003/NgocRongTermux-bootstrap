@@ -24,13 +24,21 @@ else
   gh repo clone "$REPO" "$CHECKOUT"
 fi
 
-if [ "${1:-}" = "--watch-download" ]; then
-  [ -f "$CHECKOUT/termux/download-watchdog.sh" ] || fail "Repository chưa có download watchdog."
-  chmod +x "$CHECKOUT/termux/download-watchdog.sh"
-  bash "$CHECKOUT/termux/download-watchdog.sh" --daemon
+MODE="${1:-install}"
+[ -f "$CHECKOUT/termux/ngocrong-oneclick.sh" ] || fail "Repository chưa có installer server."
+[ -f "$CHECKOUT/termux/download-watchdog.sh" ] || fail "Repository chưa có download watchdog."
+[ -f "$CHECKOUT/termux/auto-install-server.sh" ] || fail "Repository chưa có supervisor auto-install."
+chmod +x "$CHECKOUT/termux/ngocrong-oneclick.sh" "$CHECKOUT/termux/download-watchdog.sh" "$CHECKOUT/termux/auto-install-server.sh"
+# Never let a standalone downloader compete with the complete installer.
+bash "$CHECKOUT/termux/download-watchdog.sh" --stop >/dev/null 2>&1 || true
+
+if [ "$MODE" = "--background" ]; then
+  bash "$CHECKOUT/termux/auto-install-server.sh" --daemon
+  printf '%s\n' 'Auto-install đang chạy nền; tải xong sẽ tự import database và khởi động game server.'
   exit 0
 fi
 
-[ -f "$CHECKOUT/termux/ngocrong-oneclick.sh" ] || fail "Repository chưa có installer server."
-chmod +x "$CHECKOUT/termux/ngocrong-oneclick.sh"
-NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/ngocrong-oneclick.sh"
+[ "$MODE" = "--watch-download" ] || [ "$MODE" = "--install" ] || [ "$MODE" = "install" ] || fail "Dùng --install để cài/chạy server hoặc --background để chạy tự động nền."
+# Foreground by default: the command does not return until download, database,
+# Java startup and port health check have all completed.
+NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/auto-install-server.sh" --worker
