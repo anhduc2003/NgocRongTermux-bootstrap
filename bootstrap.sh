@@ -41,10 +41,16 @@ esac
 # If the launcher was already copied into the installed project, start locally
 # without contacting GitHub. This is the true no-setup path.
 if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
-   && [ -f "$PROJECT/termux/start-existing-server.sh" ]; then
+   && [ -s "$PROJECT/termux/start-existing-server.sh" ] \
+   && grep -q 'ServerManager' "$PROJECT/termux/start-existing-server.sh" 2>/dev/null; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
-  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ; bỏ qua GitHub và chạy trực tiếp.'
-  exec env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"
+  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ; bỏ qua GitHub và chạy trực tiếp.'
+  env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"
+  exit 0
+fi
+if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
+   && [ -e "$PROJECT/termux/start-existing-server.sh" ]; then
+  printf '%s\n' '[StartOnly] Launcher cục bộ không hợp lệ; sẽ tải lại payload start-only.'
 fi
 
 # Public start-only payload contains only the launcher and JDBC compatibility
