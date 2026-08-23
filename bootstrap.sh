@@ -42,6 +42,23 @@ run_start_only_launcher() {
   return 0
 }
 
+prepare_local_jdbc_assets() {
+  local target source_url
+  mkdir -p "$PROJECT/termux/lib"
+  for asset in compat-mysql-driver.jar mysql-connector-j-8.4.0.jar; do
+    target="$PROJECT/termux/lib/$asset"
+    [ -s "$target" ] && continue
+    if [ -s "$CHECKOUT/termux/lib/$asset" ]; then
+      cp -f "$CHECKOUT/termux/lib/$asset" "$target"
+      continue
+    fi
+    source_url="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}/$asset"
+    printf '[StartOnly] Đang bổ sung JAR JDBC: %s\n' "$asset"
+    curl -fsSL "$source_url" -o "$target" || return 1
+    [ -s "$target" ] || return 1
+  done
+}
+
 case "$MODE" in
   --start-only|--start)
     command -v pkg >/dev/null 2>&1 || fail "Hãy chạy lệnh này trong Termux."
@@ -73,6 +90,9 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
    && grep -q 'ServerManager' "$PROJECT/termux/start-existing-server.sh" 2>/dev/null; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
+  if ! prepare_local_jdbc_assets; then
+    fail "Không bổ sung được JAR JDBC cho launcher cục bộ."
+  fi
   if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
     fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
   fi
