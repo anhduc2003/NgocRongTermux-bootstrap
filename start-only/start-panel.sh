@@ -12,6 +12,7 @@ API_LOG="$LOG_DIR/panel-api.log"
 WEB_LOG="$LOG_DIR/panel-web.log"
 API_URL="http://127.0.0.1:${NRO_PANEL_API_PORT:-3001}"
 WEB_URL="http://127.0.0.1:${NRO_PANEL_WEB_PORT:-5173}"
+LOCK_DIR="$ROOT/.panel-start.lock"
 
 say() { printf '[Panel] %s\n' "$*"; }
 fail() { printf '[Panel][ERROR] %s\n' "$*" >&2; exit 1; }
@@ -34,6 +35,16 @@ ensure_node() {
 ensure_node
 command -v curl >/dev/null 2>&1 || fail "Thiếu curl trong Termux."
 mkdir -p "$LOG_DIR"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  if [ -s "$LOCK_DIR/pid" ] && kill -0 "$(cat "$LOCK_DIR/pid" 2>/dev/null)" 2>/dev/null; then
+    say "Một tiến trình start-panel khác đang chạy; bỏ qua lần gọi trùng."
+    exit 0
+  fi
+  rm -rf "$LOCK_DIR"
+  mkdir "$LOCK_DIR"
+fi
+printf '%s\n' "$$" > "$LOCK_DIR/pid"
+trap 'rm -rf "$LOCK_DIR"' EXIT
 
 install_deps() {
   local dir="$1"
@@ -60,9 +71,24 @@ pid_running() {
 
 install_deps "$API_DIR"
 
-if [ ! -f "$API_DIR/.env" ]; then
-  say "Khởi tạo schema và cấu hình panel từ Config.properties..."
-  (cd "$API_DIR" && npm run db:sync)
+sync_panel_config() {
+  say "Đồng bộ schema và cấu hình panel từ Config.properties..."
+  local attempt
+  for attempt in 1 2 3; do
+    if (cd "$API_DIR" && npm run db:sync); then
+      return 0
+    fi
+    [ "$attempt" -lt 3 ] && sleep 2
+  done
+  return 1
+}
+
+if ! sync_panel_config; then
+  if [ -f "$API_DIR/.env" ]; then
+    say "Cảnh báo: db-sync chưa thành công; tiếp tục dùng cấu hình panel hiện có."
+  else
+    fail "Không khởi tạo được cấu hình panel và chưa có .env dự phòng."
+  fi
 fi
 if ! pid_running "$API_PID_FILE"; then
   rm -f "$API_PID_FILE"
