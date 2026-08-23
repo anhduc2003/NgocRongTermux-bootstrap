@@ -100,6 +100,32 @@ prepare_local_panel_scripts() {
   done
 }
 
+prepare_private_panel_source() {
+  [ -d "$PROJECT/panel" ] && return 0
+  if ! command -v gh >/dev/null 2>&1 || ! gh auth status --hostname github.com >/dev/null 2>&1; then
+    printf '%s\n' '[StartOnly] Không có quyền GitHub private; giữ nguyên game server và bỏ qua panel.' >&2
+    return 0
+  fi
+  local cache="${HOME}/.cache/ngocrong-panel-source"
+  mkdir -p "$(dirname "$cache")"
+  if [ ! -d "$cache/.git" ]; then
+    rm -rf "$cache"
+    printf '%s\n' '[StartOnly] Đang lấy riêng thư mục panel từ repository private (sparse checkout).'
+    gh repo clone "$REPO" "$cache" -- --depth=1 --filter=blob:none --sparse \
+      || { printf '%s\n' '[StartOnly] Không lấy được panel private; bỏ qua panel.' >&2; return 0; }
+    git -C "$cache" sparse-checkout set panel \
+      || { printf '%s\n' '[StartOnly] Không chuẩn bị được panel private; bỏ qua panel.' >&2; return 0; }
+  else
+    git -C "$cache" pull --ff-only --quiet || true
+    git -C "$cache" sparse-checkout set panel || true
+  fi
+  [ -d "$cache/panel" ] || return 0
+  cp -a "$cache/panel" "$PROJECT/panel"
+  rm -f "$PROJECT/panel/api/.env" "$PROJECT/panel/web/.env"
+  rm -rf "$PROJECT/panel/api/node_modules" "$PROJECT/panel/web/node_modules"
+  printf '%s\n' '[StartOnly] Đã bổ sung panel private mà không thay đổi runtime game/database.'
+}
+
 refresh_local_launcher() {
   local launcher_url temp_launcher
   launcher_url="${NRO_PUBLIC_LAUNCHER_URL:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only/start-existing-server.sh}"
@@ -149,6 +175,7 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
   refresh_local_launcher || true
+  prepare_private_panel_source
   if ! prepare_local_jdbc_assets || ! prepare_local_protocol_assets || ! prepare_local_panel_scripts; then
     fail "Không bổ sung được asset JDBC/protocol/panel cho launcher cục bộ."
   fi
@@ -234,8 +261,14 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
   if [ -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" ]; then
     cp -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"
   fi
+  prepare_private_panel_source
   if ! prepare_local_protocol_assets; then
     fail "Không bổ sung được patch protocol DragonBoy250 từ repository."
+  fi
+  if [ -d "$CHECKOUT/panel" ] && [ ! -d "$PROJECT/panel" ]; then
+    cp -a "$CHECKOUT/panel" "$PROJECT/panel"
+    rm -f "$PROJECT/panel/api/.env" "$PROJECT/panel/web/.env"
+    rm -rf "$PROJECT/panel/api/node_modules" "$PROJECT/panel/web/node_modules"
   fi
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
