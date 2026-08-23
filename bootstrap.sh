@@ -44,8 +44,29 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
    && [ -s "$PROJECT/termux/start-existing-server.sh" ] \
    && grep -q 'ServerManager' "$PROJECT/termux/start-existing-server.sh" 2>/dev/null; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
-  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ; bỏ qua GitHub và chạy trực tiếp.'
-  env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"
+  mkdir -p "$PROJECT/logs"
+  LAUNCHER_LOG="$PROJECT/logs/bootstrap-launcher.log"
+  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ; bắt đầu gọi launcher server.'
+  set +e
+  trap - ERR
+  env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh" 2>&1 | tee "$LAUNCHER_LOG"
+  launcher_rc=${PIPESTATUS[0]}
+  trap on_error ERR
+  set -e
+  if [ "$launcher_rc" -ne 0 ]; then
+    printf '\n[ERROR] Launcher trả về mã %s.\n' "$launcher_rc" >&2
+    printf '[ERROR] Kiểm tra tự động:\n' >&2
+    for required_path in "$PROJECT/cc2.jar" "$PROJECT/Config.properties" "$PROJECT/data" "$PROJECT/logs"; do
+      if [ -e "$required_path" ]; then
+        printf '  OK: %s\n' "$required_path" >&2
+      else
+        printf '  THIẾU: %s\n' "$required_path" >&2
+      fi
+    done
+    printf '[ERROR] Log launcher: %s\n' "$LAUNCHER_LOG" >&2
+    tail -100 "$LAUNCHER_LOG" >&2 || true
+    fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
+  fi
   exit 0
 fi
 if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
