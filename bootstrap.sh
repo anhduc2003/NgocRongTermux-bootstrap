@@ -17,11 +17,18 @@ if ! gh auth status --hostname github.com >/dev/null 2>&1; then
   gh auth status --hostname github.com >/dev/null 2>&1 || fail "GitHub chưa xác thực thành công."
 fi
 
+# gh can know the token while plain git still lacks its credential helper.
+# Configure that bridge explicitly, then make any auth failure fail instead
+# of opening the confusing `Username for https://github.com` prompt.
+gh auth setup-git --hostname github.com >/dev/null
+gh api "/repos/$REPO" >/dev/null 2>&1 || fail "Tài khoản GitHub hiện tại không có quyền đọc repository riêng tư $REPO. Hãy đăng nhập đúng tài khoản bằng gh auth login."
+export GIT_TERMINAL_PROMPT=0
+
 if [ -d "$CHECKOUT/.git" ]; then
-  git -C "$CHECKOUT" pull --ff-only
+  git -C "$CHECKOUT" pull --ff-only || fail "Không thể pull repository $REPO. Phiên GitHub chưa cấp quyền cho Git hoặc mạng bị ngắt."
 else
   rm -rf "$CHECKOUT"
-  gh repo clone "$REPO" "$CHECKOUT"
+  gh repo clone "$REPO" "$CHECKOUT" || fail "Không thể clone repository $REPO. Phiên GitHub chưa cấp quyền hoặc repository không tồn tại."
 fi
 
 MODE="${1:-install}"
