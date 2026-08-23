@@ -9,7 +9,7 @@ fail() { printf '\n[ERROR] %s\n' "$*" >&2; exit 1; }
 
 command -v pkg >/dev/null 2>&1 || fail "Hãy chạy lệnh này trong Termux."
 pkg update -y
-pkg install -y gh git
+pkg install -y gh git curl coreutils
 
 if ! gh auth status --hostname github.com >/dev/null 2>&1; then
   printf '\nGitHub cần xác thực một lần bằng trình duyệt. Không nhập mật khẩu vào Git.\n'
