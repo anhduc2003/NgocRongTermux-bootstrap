@@ -48,30 +48,14 @@ CONFIG_SERVER_IP="$(cfg server.ip 127.0.0.1)"
 SERVER_IP="${NRO_SERVER_IP:-$CONFIG_SERVER_IP}"
 GAME_PORT="$(cfg server.port 14445)"
 
-# A server-list entry containing 127.0.0.1 is usable only by a client on the
-# same loopback namespace. When no explicit IP was supplied, prefer the local
-# network address so another Android/device can receive the resource endpoint.
-if [ -z "${NRO_SERVER_IP:-}" ] && { [ "$SERVER_IP" = "127.0.0.1" ] || [ "$SERVER_IP" = "localhost" ]; }; then
-  AUTO_SERVER_IP=""
-  if command -v ip >/dev/null 2>&1; then
-    # Termux can return status 1 when there is no default route. IP discovery
-    # is optional and must never abort the launcher under set -e/pipefail.
-    AUTO_SERVER_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}' || true)"
-  fi
-  case "$AUTO_SERVER_IP" in
-    ""|127.*|0.0.0.0|169.254.*) AUTO_SERVER_IP="" ;;
-  esac
-  if [ -z "$AUTO_SERVER_IP" ] && command -v ifconfig >/dev/null 2>&1; then
-    AUTO_SERVER_IP="$(ifconfig 2>/dev/null | awk '/inet / && $2 !~ /^127[.]|^169[.]254[.]/ {print $2; exit}' || true)"
-  fi
-  case "$AUTO_SERVER_IP" in
-    ""|127.*|0.0.0.0|169.254.*) AUTO_SERVER_IP="" ;;
-  esac
-  if [ -n "$AUTO_SERVER_IP" ]; then
-    SERVER_IP="$AUTO_SERVER_IP"
-  else
-    info "Không tự phát hiện được IP mạng; giữ địa chỉ cấu hình: $SERVER_IP"
-  fi
+# IP discovery is intentionally not attempted here. On some Termux devices
+# `ip route get` returns status 1 when there is no default route, and that must
+# never prevent MariaDB/Java from starting. Set NRO_SERVER_IP explicitly when
+# the client is on another device; otherwise the configured server.ip is used.
+if [ -n "${NRO_SERVER_IP:-}" ]; then
+  info "Dùng IP server được chỉ định: $SERVER_IP"
+elif [ "$SERVER_IP" = "127.0.0.1" ] || [ "$SERVER_IP" = "localhost" ]; then
+  info "Dùng server.ip=$SERVER_IP trong Config.properties; không tự dò route."
 fi
 
 # Keep the address sent by DataGame.sendLinkIP synchronized with the address
