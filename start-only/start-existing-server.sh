@@ -189,6 +189,16 @@ if [ -f "$PID_FILE" ]; then
   OLD_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
   if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
     info "Game server đã chạy PID $OLD_PID."
+    PANEL_START="$PROJECT/termux/start-panel.sh"
+    if [ -x "$PANEL_START" ]; then
+      if bash "$PANEL_START"; then
+        info "Web panel đã được kiểm tra/kích hoạt cùng game server."
+      else
+        info "[WARN] Web panel chưa khởi động được; game server vẫn đang hoạt động."
+      fi
+    else
+      info "Web panel chưa được cài trong runtime; bỏ qua kích hoạt panel."
+    fi
     exit 0
   fi
   rm -f "$PID_FILE"
