@@ -65,12 +65,20 @@ prepare_local_protocol_assets() {
     nro/models/network/KeyHandler.class
     nro/models/network/Collector.class
     nro/models/network/MessageSendCollect.class
+    nro/models/network/Network.class
+    nro/models/network/Sender.class
+    nro/models/network/Session.class
+    nro/models/network/QueueHandler.class
+    nro/models/network/Message.class
+    nro/models/network/MySession.class
+    nro/models/database/AmodsubVN.class
     nro/models/network/ClientVerifier.class
     nro/models/services/Service.class
     nro/models/services_func/Trade.class
     nro/models/services_func/TransactionService.class
     nro/models/data/DataGame.class
     nro/models/server/Controller.class
+    nro/models/npc/DuaHauEgg.class
     nro/models/server/ServerManager.class
     nro/models/database/ClanDAO.class
     nro/models/database/ShopDAO.class
