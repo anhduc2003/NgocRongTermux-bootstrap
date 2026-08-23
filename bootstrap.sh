@@ -24,6 +24,13 @@ else
   gh repo clone "$REPO" "$CHECKOUT"
 fi
 
+if [ "${1:-}" = "--watch-download" ]; then
+  [ -f "$CHECKOUT/termux/download-watchdog.sh" ] || fail "Repository chưa có download watchdog."
+  chmod +x "$CHECKOUT/termux/download-watchdog.sh"
+  bash "$CHECKOUT/termux/download-watchdog.sh" --daemon
+  exit 0
+fi
+
 [ -f "$CHECKOUT/termux/ngocrong-oneclick.sh" ] || fail "Repository chưa có installer server."
 chmod +x "$CHECKOUT/termux/ngocrong-oneclick.sh"
 NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/ngocrong-oneclick.sh"
