@@ -20,8 +20,18 @@ fail() { printf '[Panel][ERROR] %s\n' "$*" >&2; exit 1; }
   say "Không tìm thấy panel trong $PANEL; game server vẫn hoạt động bình thường."
   exit 0
 }
-command -v node >/dev/null 2>&1 || fail "Thiếu Node.js trong Termux."
-command -v npm >/dev/null 2>&1 || fail "Thiếu npm trong Termux."
+ensure_node() {
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    return 0
+  fi
+  command -v pkg >/dev/null 2>&1 || fail "Thiếu Node.js/npm và không tìm thấy package manager Termux."
+  say "Termux chưa có Node.js; đang tự cài nodejs-lts..."
+  pkg install -y nodejs-lts >/dev/null 2>&1 || pkg install -y nodejs >/dev/null 2>&1 \
+    || fail "Không cài được Node.js bằng pkg."
+  command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1 \
+    || fail "Đã cài package nhưng chưa tìm thấy node/npm."
+}
+ensure_node
 command -v curl >/dev/null 2>&1 || fail "Thiếu curl trong Termux."
 mkdir -p "$LOG_DIR"
 
