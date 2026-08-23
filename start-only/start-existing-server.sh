@@ -54,13 +54,15 @@ GAME_PORT="$(cfg server.port 14445)"
 if [ -z "${NRO_SERVER_IP:-}" ] && { [ "$SERVER_IP" = "127.0.0.1" ] || [ "$SERVER_IP" = "localhost" ]; }; then
   AUTO_SERVER_IP=""
   if command -v ip >/dev/null 2>&1; then
-    AUTO_SERVER_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}')"
+    # Termux can return status 1 when there is no default route. IP discovery
+    # is optional and must never abort the launcher under set -e/pipefail.
+    AUTO_SERVER_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}' || true)"
   fi
   case "$AUTO_SERVER_IP" in
     ""|127.*|0.0.0.0|169.254.*) AUTO_SERVER_IP="" ;;
   esac
   if [ -z "$AUTO_SERVER_IP" ] && command -v ifconfig >/dev/null 2>&1; then
-    AUTO_SERVER_IP="$(ifconfig 2>/dev/null | awk '/inet / && $2 !~ /^127[.]|^169[.]254[.]/ {print $2; exit}')"
+    AUTO_SERVER_IP="$(ifconfig 2>/dev/null | awk '/inet / && $2 !~ /^127[.]|^169[.]254[.]/ {print $2; exit}' || true)"
   fi
   case "$AUTO_SERVER_IP" in
     ""|127.*|0.0.0.0|169.254.*) AUTO_SERVER_IP="" ;;
