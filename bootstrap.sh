@@ -66,6 +66,7 @@ prepare_local_protocol_assets() {
     nro/models/network/Collector.class
     nro/models/network/MessageSendCollect.class
     nro/models/network/ClientVerifier.class
+    nro/models/services/Service.class
     nro/models/data/DataGame.class
     nro/models/server/Controller.class
   )
@@ -161,6 +162,8 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/Collector.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/Collector.class" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/MessageSendCollect.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/MessageSendCollect.class" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/ClientVerifier.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/ClientVerifier.class" \
+     && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/services" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/services/Service.class" -o "$PROJECT/termux/runtime-patches/nro/models/services/Service.class" \
      && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/data" "$PROJECT/termux/runtime-patches/nro/models/server" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/data/DataGame.class" -o "$PROJECT/termux/runtime-patches/nro/models/data/DataGame.class" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/server/Controller.class" -o "$PROJECT/termux/runtime-patches/nro/models/server/Controller.class"; then

@@ -115,6 +115,7 @@ PROTOCOL_PATCHES=(
   "nro/models/network/MessageSendCollect.class"
   "nro/models/data/DataGame.class"
   "nro/models/network/ClientVerifier.class"
+  "nro/models/services/Service.class"
   "nro/models/server/Controller.class"
 )
 command -v jar >/dev/null 2>&1 || fail "Không tìm thấy lệnh jar trong Java runtime."
