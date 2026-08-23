@@ -46,7 +46,10 @@ DB_USER="${NRO_DB_USER:-$(cfg database.user ngocrong_game)}"
 DB_PASS="${NRO_DB_PASS:-$(cfg database.pass '')}"
 CONFIG_SERVER_IP="$(cfg server.ip 127.0.0.1)"
 SERVER_IP="${NRO_SERVER_IP:-$CONFIG_SERVER_IP}"
-GAME_PORT="$(cfg server.port 14445)"
+CONFIG_GAME_PORT="$(cfg server.port 14445)"
+# The delivered DragonBoy250 redirector forces every socket URL to
+# 127.0.0.1:14445. Keep the existing runtime aligned with that client endpoint.
+GAME_PORT="${NRO_GAME_PORT:-14445}"
 
 # IP discovery is intentionally not attempted here. On some Termux devices
 # `ip route get` returns status 1 when there is no default route, and that must
@@ -61,8 +64,9 @@ fi
 # Keep the address sent by DataGame.sendLinkIP synchronized with the address
 # printed by this launcher. This changes only endpoint properties, never SQL
 # or MariaDB data.
-if [ "$SERVER_IP" != "$CONFIG_SERVER_IP" ] || [ -n "${NRO_SERVER_IP:-}" ]; then
+if [ "$SERVER_IP" != "$CONFIG_SERVER_IP" ] || [ "$GAME_PORT" != "$CONFIG_GAME_PORT" ] || [ -n "${NRO_SERVER_IP:-}" ] || [ -n "${NRO_GAME_PORT:-}" ]; then
   sed -i -E "s|^server[.]ip=.*$|server.ip=$SERVER_IP|" "$PROJECT/Config.properties"
+  sed -i -E "s|^server[.]port=.*$|server.port=$GAME_PORT|" "$PROJECT/Config.properties"
   sed -i -E "s|^server[.]sv1=.*$|server.sv1=NRO 2024:$SERVER_IP:$GAME_PORT:0|" "$PROJECT/Config.properties"
   info "Đã đồng bộ địa chỉ quảng bá trong Config.properties: ${SERVER_IP}:${GAME_PORT}"
 fi
