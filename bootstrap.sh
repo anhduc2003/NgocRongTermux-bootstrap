@@ -14,6 +14,34 @@ on_error() {
 }
 trap on_error ERR
 
+run_start_only_launcher() {
+  local launcher="$1" launcher_log launcher_rc required_path
+  mkdir -p "$PROJECT/logs"
+  launcher_log="$PROJECT/logs/bootstrap-launcher.log"
+  printf '%s\n' '[StartOnly] Bắt đầu gọi launcher server.'
+  set +e
+  trap - ERR
+  env NRO_PROJECT_DIR="$PROJECT" bash "$launcher" 2>&1 | tee "$launcher_log"
+  launcher_rc=${PIPESTATUS[0]}
+  trap on_error ERR
+  set -e
+  if [ "$launcher_rc" -ne 0 ]; then
+    printf '\n[ERROR] Launcher trả về mã %s.\n' "$launcher_rc" >&2
+    printf '[ERROR] Kiểm tra tự động:\n' >&2
+    for required_path in "$PROJECT/cc2.jar" "$PROJECT/Config.properties" "$PROJECT/data" "$PROJECT/logs"; do
+      if [ -e "$required_path" ]; then
+        printf '  OK: %s\n' "$required_path" >&2
+      else
+        printf '  THIẾU: %s\n' "$required_path" >&2
+      fi
+    done
+    printf '[ERROR] Log launcher: %s\n' "$launcher_log" >&2
+    tail -100 "$launcher_log" >&2 || true
+    return "$launcher_rc"
+  fi
+  return 0
+}
+
 case "$MODE" in
   --start-only|--start)
     command -v pkg >/dev/null 2>&1 || fail "Hãy chạy lệnh này trong Termux."
@@ -44,27 +72,8 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
    && [ -s "$PROJECT/termux/start-existing-server.sh" ] \
    && grep -q 'ServerManager' "$PROJECT/termux/start-existing-server.sh" 2>/dev/null; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
-  mkdir -p "$PROJECT/logs"
-  LAUNCHER_LOG="$PROJECT/logs/bootstrap-launcher.log"
-  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ; bắt đầu gọi launcher server.'
-  set +e
-  trap - ERR
-  env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh" 2>&1 | tee "$LAUNCHER_LOG"
-  launcher_rc=${PIPESTATUS[0]}
-  trap on_error ERR
-  set -e
-  if [ "$launcher_rc" -ne 0 ]; then
-    printf '\n[ERROR] Launcher trả về mã %s.\n' "$launcher_rc" >&2
-    printf '[ERROR] Kiểm tra tự động:\n' >&2
-    for required_path in "$PROJECT/cc2.jar" "$PROJECT/Config.properties" "$PROJECT/data" "$PROJECT/logs"; do
-      if [ -e "$required_path" ]; then
-        printf '  OK: %s\n' "$required_path" >&2
-      else
-        printf '  THIẾU: %s\n' "$required_path" >&2
-      fi
-    done
-    printf '[ERROR] Log launcher: %s\n' "$LAUNCHER_LOG" >&2
-    tail -100 "$LAUNCHER_LOG" >&2 || true
+  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
+  if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
     fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
   fi
   exit 0
@@ -86,27 +95,8 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/compat-mysql-driver.jar" -o "$PROJECT/termux/lib/compat-mysql-driver.jar" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/mysql-connector-j-8.4.0.jar" -o "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"; then
     chmod +x "$PROJECT/termux/start-existing-server.sh"
-    mkdir -p "$PROJECT/logs"
-    LAUNCHER_LOG="$PROJECT/logs/bootstrap-launcher.log"
-    printf '%s\n' '[StartOnly] Đã tải payload; bắt đầu gọi launcher server.'
-    set +e
-    trap - ERR
-    env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh" 2>&1 | tee "$LAUNCHER_LOG"
-    launcher_rc=${PIPESTATUS[0]}
-    trap on_error ERR
-    set -e
-    if [ "$launcher_rc" -ne 0 ]; then
-      printf '\n[ERROR] Launcher trả về mã %s.\n' "$launcher_rc" >&2
-      printf '[ERROR] Kiểm tra tự động:\n' >&2
-      for required_path in "$PROJECT/cc2.jar" "$PROJECT/Config.properties" "$PROJECT/data" "$PROJECT/logs"; do
-        if [ -e "$required_path" ]; then
-          printf '  OK: %s\n' "$required_path" >&2
-        else
-          printf '  THIẾU: %s\n' "$required_path" >&2
-        fi
-      done
-      printf '[ERROR] Log launcher: %s\n' "$LAUNCHER_LOG" >&2
-      tail -100 "$LAUNCHER_LOG" >&2 || true
+    printf '%s\n' '[StartOnly] Đã tải payload.'
+    if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
       fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
     fi
     exit 0
@@ -154,25 +144,7 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
     cp -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"
   fi
   chmod +x "$PROJECT/termux/start-existing-server.sh"
-  mkdir -p "$PROJECT/logs"
-  LAUNCHER_LOG="$PROJECT/logs/bootstrap-launcher.log"
-  printf '%s\n' '[StartOnly] Bắt đầu gọi launcher server.'
-  set +e
-  env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh" 2>&1 | tee "$LAUNCHER_LOG"
-  launcher_rc=${PIPESTATUS[0]}
-  set -e
-  if [ "$launcher_rc" -ne 0 ]; then
-    printf '\n[ERROR] Launcher trả về mã %s.\n' "$launcher_rc" >&2
-    printf '[ERROR] Kiểm tra tự động:\n' >&2
-    for required_path in "$PROJECT/cc2.jar" "$PROJECT/Config.properties" "$PROJECT/data" "$PROJECT/logs"; do
-      if [ -e "$required_path" ]; then
-        printf '  OK: %s\n' "$required_path" >&2
-      else
-        printf '  THIẾU: %s\n' "$required_path" >&2
-      fi
-    done
-    printf '[ERROR] Log launcher: %s\n' "$LAUNCHER_LOG" >&2
-    tail -100 "$LAUNCHER_LOG" >&2 || true
+  if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
     fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
   fi
   exit 0
