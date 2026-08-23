@@ -29,8 +29,9 @@ MODE="${1:-install}"
 [ -f "$CHECKOUT/termux/download-watchdog.sh" ] || fail "Repository chưa có download watchdog."
 [ -f "$CHECKOUT/termux/auto-install-server.sh" ] || fail "Repository chưa có supervisor auto-install."
 chmod +x "$CHECKOUT/termux/ngocrong-oneclick.sh" "$CHECKOUT/termux/download-watchdog.sh" "$CHECKOUT/termux/auto-install-server.sh"
-# Never let a standalone downloader compete with the complete installer.
+# Never let an old watchdog or supervisor compete with the complete installer.
 bash "$CHECKOUT/termux/download-watchdog.sh" --stop >/dev/null 2>&1 || true
+bash "$CHECKOUT/termux/auto-install-server.sh" --stop >/dev/null 2>&1 || true
 
 if [ "$MODE" = "--background" ]; then
   bash "$CHECKOUT/termux/auto-install-server.sh" --daemon
