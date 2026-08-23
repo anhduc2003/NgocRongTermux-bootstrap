@@ -147,6 +147,7 @@ PROTOCOL_PATCHES=(
   "nro/models/services/Service.class"
   "nro/models/services_func/Trade.class"
   "nro/models/services_func/TransactionService.class"
+  "nro/models/services_func/UseItem.class"
   "nro/models/server/Controller.class"
   "nro/models/npc/DuaHauEgg.class"
   "nro/models/server/ServerManager.class"

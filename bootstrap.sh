@@ -76,6 +76,7 @@ prepare_local_protocol_assets() {
     nro/models/services/Service.class
     nro/models/services_func/Trade.class
     nro/models/services_func/TransactionService.class
+    nro/models/services_func/UseItem.class
     nro/models/data/DataGame.class
     nro/models/server/Controller.class
     nro/models/npc/DuaHauEgg.class
