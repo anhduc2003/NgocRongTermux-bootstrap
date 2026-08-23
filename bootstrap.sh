@@ -67,10 +67,15 @@ prepare_local_protocol_assets() {
     nro/models/network/MessageSendCollect.class
     nro/models/network/ClientVerifier.class
     nro/models/services/Service.class
+    nro/models/services_func/Trade.class
+    nro/models/services_func/TransactionService.class
     nro/models/data/DataGame.class
     nro/models/server/Controller.class
+    nro/models/server/ServerManager.class
     nro/models/database/ClanDAO.class
     nro/models/database/ShopDAO.class
+    nro/models/database/HistoryTransactionDAO.class
+    nro/models/database/SuperRankDAO.class
     nro/models/shop/TabShop.class
     nro/models/shop/Shop.class
     nro/models/shop/TabShopSanta.class
