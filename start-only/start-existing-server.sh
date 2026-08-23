@@ -279,6 +279,16 @@ for _ in $(seq 1 120); do
     info "Địa chỉ lắng nghe: 0.0.0.0:${GAME_PORT}"
     info "Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
     info "Log: $LOG_FILE"
+    PANEL_START="$PROJECT/termux/start-panel.sh"
+    if [ -x "$PANEL_START" ]; then
+      if bash "$PANEL_START"; then
+        info "Web panel đã được kích hoạt sau khi game server sẵn sàng."
+      else
+        info "[WARN] Web panel chưa khởi động được; game server vẫn đang hoạt động."
+      fi
+    else
+      info "Web panel chưa được cài trong runtime; bỏ qua kích hoạt panel."
+    fi
     exit 0
   fi
   sleep 1

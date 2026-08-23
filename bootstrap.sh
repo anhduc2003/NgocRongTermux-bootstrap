@@ -84,6 +84,22 @@ prepare_local_protocol_assets() {
   done
 }
 
+prepare_local_panel_scripts() {
+  local target source_url asset
+  for asset in start-panel.sh stop-panel.sh; do
+    target="$PROJECT/termux/$asset"
+    if [ -s "$CHECKOUT/start-only/$asset" ]; then
+      cp -f "$CHECKOUT/start-only/$asset" "$target"
+    else
+      source_url="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}/$asset"
+      printf '[StartOnly] Đang bổ sung launcher web panel: %s\n' "$asset"
+      curl -fsSL "$source_url" -o "$target" || return 1
+    fi
+    [ -s "$target" ] || return 1
+    chmod +x "$target"
+  done
+}
+
 refresh_local_launcher() {
   local launcher_url temp_launcher
   launcher_url="${NRO_PUBLIC_LAUNCHER_URL:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only/start-existing-server.sh}"
@@ -133,8 +149,8 @@ if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
   chmod +x "$PROJECT/termux/start-existing-server.sh"
   printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ hợp lệ.'
   refresh_local_launcher || true
-  if ! prepare_local_jdbc_assets || ! prepare_local_protocol_assets; then
-    fail "Không bổ sung được asset JDBC/protocol cho launcher cục bộ."
+  if ! prepare_local_jdbc_assets || ! prepare_local_protocol_assets || ! prepare_local_panel_scripts; then
+    fail "Không bổ sung được asset JDBC/protocol/panel cho launcher cục bộ."
   fi
   if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
     fail "Launcher start-only thất bại; nguyên nhân đã được in ở trên."
@@ -166,7 +182,9 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/services/Service.class" -o "$PROJECT/termux/runtime-patches/nro/models/services/Service.class" \
      && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/data" "$PROJECT/termux/runtime-patches/nro/models/server" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/data/DataGame.class" -o "$PROJECT/termux/runtime-patches/nro/models/data/DataGame.class" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/server/Controller.class" -o "$PROJECT/termux/runtime-patches/nro/models/server/Controller.class"; then
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/server/Controller.class" -o "$PROJECT/termux/runtime-patches/nro/models/server/Controller.class" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/start-panel.sh" -o "$PROJECT/termux/start-panel.sh" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/stop-panel.sh" -o "$PROJECT/termux/stop-panel.sh"; then
     chmod +x "$PROJECT/termux/start-existing-server.sh"
     printf '%s\n' '[StartOnly] Đã tải payload.'
     if ! run_start_only_launcher "$PROJECT/termux/start-existing-server.sh"; then
