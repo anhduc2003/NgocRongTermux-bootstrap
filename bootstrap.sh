@@ -101,12 +101,12 @@ prepare_local_panel_scripts() {
 }
 
 prepare_private_panel_source() {
-  [ -d "$PROJECT/panel" ] && return 0
+  local cache="${HOME}/.cache/ngocrong-panel-source"
+  local source_commit current_commit
   if ! command -v gh >/dev/null 2>&1 || ! gh auth status --hostname github.com >/dev/null 2>&1; then
     printf '%s\n' '[StartOnly] Không có quyền GitHub private; giữ nguyên game server và bỏ qua panel.' >&2
     return 0
   fi
-  local cache="${HOME}/.cache/ngocrong-panel-source"
   mkdir -p "$(dirname "$cache")"
   if [ ! -d "$cache/.git" ]; then
     rm -rf "$cache"
@@ -120,10 +120,27 @@ prepare_private_panel_source() {
     git -C "$cache" sparse-checkout set panel || true
   fi
   [ -d "$cache/panel" ] || return 0
-  cp -a "$cache/panel" "$PROJECT/panel"
-  rm -f "$PROJECT/panel/api/.env" "$PROJECT/panel/web/.env"
-  rm -rf "$PROJECT/panel/api/node_modules" "$PROJECT/panel/web/node_modules"
-  printf '%s\n' '[StartOnly] Đã bổ sung panel private mà không thay đổi runtime game/database.'
+  source_commit="$(git -C "$cache" rev-parse HEAD 2>/dev/null || true)"
+  current_commit="$(cat "$PROJECT/panel/.nro-panel-source-commit" 2>/dev/null || true)"
+  if [ -d "$PROJECT/panel" ] && [ -n "$source_commit" ] && [ "$source_commit" = "$current_commit" ]; then
+    return 0
+  fi
+  if [ -d "$PROJECT/panel" ]; then
+    printf '%s\n' '[StartOnly] Đang cập nhật mã panel mới; giữ nguyên .env và node_modules.'
+    while IFS= read -r -d '' rel; do
+      case "$rel" in
+        ./api/.env|./web/.env|*/node_modules/*|*/dist/*) continue ;;
+      esac
+      mkdir -p "$PROJECT/panel/$(dirname "$rel")"
+      cp -f "$cache/panel/$rel" "$PROJECT/panel/$rel"
+    done < <(cd "$cache/panel" && find . -type f -not -path './.git/*' -print0)
+  else
+    cp -a "$cache/panel" "$PROJECT/panel"
+    rm -f "$PROJECT/panel/api/.env" "$PROJECT/panel/web/.env"
+    rm -rf "$PROJECT/panel/api/node_modules" "$PROJECT/panel/web/node_modules"
+  fi
+  [ -n "$source_commit" ] && printf '%s\n' "$source_commit" > "$PROJECT/panel/.nro-panel-source-commit"
+  printf '%s\n' '[StartOnly] Đã bổ sung/cập nhật panel private mà không thay đổi runtime game/database.'
 }
 
 refresh_local_launcher() {
