@@ -43,7 +43,29 @@ esac
 if { [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; } \
    && [ -f "$PROJECT/termux/start-existing-server.sh" ]; then
   chmod +x "$PROJECT/termux/start-existing-server.sh"
+  printf '%s\n' '[StartOnly] Đã tìm thấy launcher cục bộ; bỏ qua GitHub và chạy trực tiếp.'
   exec env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"
+fi
+
+# Public start-only payload contains only the launcher and JDBC compatibility
+# JARs; it contains no private source, SQL, accounts, or credentials. This
+# fallback makes a previously installed runtime start even when gh is not
+# authenticated in Termux.
+if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
+  PUBLIC_PAYLOAD_BASE="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}"
+  mkdir -p "$PROJECT/termux/lib"
+  printf '%s\n' '[StartOnly] Không có launcher cục bộ; tải payload start-only công khai.'
+  if curl -fsSL "$PUBLIC_PAYLOAD_BASE/start-existing-server.sh" -o "$PROJECT/termux/start-existing-server.sh" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/compat-mysql-driver.jar" -o "$PROJECT/termux/lib/compat-mysql-driver.jar" \
+     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/mysql-connector-j-8.4.0.jar" -o "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"; then
+    chmod +x "$PROJECT/termux/start-existing-server.sh"
+    printf '%s\n' '[StartOnly] Đã tải payload; bắt đầu gọi launcher server.'
+    if ! env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"; then
+      fail "Launcher start-only đã thất bại; xem log trong $PROJECT/logs/."
+    fi
+    exit 0
+  fi
+  printf '%s\n' '[StartOnly] Không tải được payload công khai; chuyển sang repository private.' >&2
 fi
 
 if ! gh auth status --hostname github.com >/dev/null 2>&1; then
@@ -64,7 +86,8 @@ gh api "/repos/$REPO" >/dev/null 2>&1 \
 export GIT_TERMINAL_PROMPT=0
 
 if [ -d "$CHECKOUT/.git" ]; then
-  git -C "$CHECKOUT" pull --ff-only \
+  printf '%s\n' '[StartOnly] Đang kiểm tra bản launcher mới trên GitHub.'
+  git -C "$CHECKOUT" pull --ff-only --quiet \
     || fail "Không thể cập nhật repository $REPO."
 else
   rm -rf "$CHECKOUT"
@@ -75,8 +98,21 @@ fi
 if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
   [ -f "$CHECKOUT/termux/start-existing-server.sh" ] \
     || fail "Repository chưa có launcher start-only."
-  chmod +x "$CHECKOUT/termux/start-existing-server.sh"
-  exec env NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/start-existing-server.sh"
+  printf '%s\n' '[StartOnly] Đã cập nhật repository; chuẩn bị launcher khởi động server.'
+  mkdir -p "$PROJECT/termux/lib"
+  cp -f "$CHECKOUT/termux/start-existing-server.sh" "$PROJECT/termux/start-existing-server.sh"
+  if [ -f "$CHECKOUT/termux/lib/compat-mysql-driver.jar" ]; then
+    cp -f "$CHECKOUT/termux/lib/compat-mysql-driver.jar" "$PROJECT/termux/lib/compat-mysql-driver.jar"
+  fi
+  if [ -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" ]; then
+    cp -f "$CHECKOUT/termux/lib/mysql-connector-j-8.4.0.jar" "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar"
+  fi
+  chmod +x "$PROJECT/termux/start-existing-server.sh"
+  printf '%s\n' '[StartOnly] Bắt đầu gọi launcher server.'
+  if ! env NRO_PROJECT_DIR="$PROJECT" bash "$PROJECT/termux/start-existing-server.sh"; then
+    fail "Launcher start-only đã thất bại; xem log trong $PROJECT/logs/."
+  fi
+  exit 0
 fi
 
 [ -f "$CHECKOUT/termux/ngocrong-oneclick.sh" ] \
