@@ -69,6 +69,45 @@ prepare_local_protocol_assets() {
     nro/models/services/Service.class
     nro/models/data/DataGame.class
     nro/models/server/Controller.class
+    nro/models/database/ClanDAO.class
+    nro/models/database/ShopDAO.class
+    nro/models/shop/TabShop.class
+    nro/models/shop/Shop.class
+    nro/models/shop/TabShopSanta.class
+    nro/models/shop/TabShopUron.class
+    nro/models/shop/TabShopMuaAvatar.class
+    nro/models/shop/TabShopHangDoc.class
+    nro/models/shop/TabShopHocKynang.class
+    nro/models/shop/TabShopDanhHieu.class
+    nro/models/shop/TabShopSoHuu.class
+    nro/models/shop/ItemShop.class
+    nro/models/server/ServerExpRate.class
+    nro/models/server/PanelCommandService.class
+    nro/models/server/Manager.class
+    nro/models/server/panel/PanelActionQueue.class
+    nro/models/server/panel/PanelActions.class
+    nro/models/server/panel/PanelAgent\$Handler.class
+    nro/models/server/panel/PanelAgent.class
+    nro/models/server/panel/PanelAuditService.class
+    nro/models/server/panel/PanelAuthService\$Session.class
+    nro/models/server/panel/PanelAuthService\$User.class
+    nro/models/server/panel/PanelAuthService.class
+    nro/models/server/panel/PanelBootstrap.class
+    nro/models/server/panel/PanelBossCatalog.class
+    nro/models/server/panel/PanelBossConfigService.class
+    nro/models/server/panel/PanelBossRewardService.class
+    nro/models/server/panel/PanelBossRuntime.class
+    nro/models/server/panel/PanelBossSpawnRegistry.class
+    nro/models/server/panel/PanelClanBridge.class
+    nro/models/server/panel/PanelClanSidecar.class
+    nro/models/server/panel/PanelConfig.class
+    nro/models/server/panel/PanelMetricsCollector.class
+    nro/models/server/panel/PanelNpcShopCatalog\$NpcShopRules.class
+    nro/models/server/panel/PanelNpcShopCatalog.class
+    nro/models/server/panel/PanelReadService.class
+    nro/models/server/panel/PanelShopSpawnService.class
+    nro/models/server/panel/PanelUtil.class
+    nro/models/server/panel/PanelWriteService.class
   )
   for asset in "${assets[@]}"; do
     target="$PROJECT/termux/runtime-patches/$asset"
@@ -218,15 +257,7 @@ if [ "$MODE" = "--start-only" ] || [ "$MODE" = "--start" ]; then
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/compat-mysql-driver.jar" -o "$PROJECT/termux/lib/compat-mysql-driver.jar" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/mysql-connector-j-8.4.0.jar" -o "$PROJECT/termux/lib/mysql-connector-j-8.4.0.jar" \
      && mkdir -p "$PROJECT/termux/runtime-patches" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/KeyHandler.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/KeyHandler.class" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/Collector.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/Collector.class" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/MessageSendCollect.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/MessageSendCollect.class" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/network/ClientVerifier.class" -o "$PROJECT/termux/runtime-patches/nro/models/network/ClientVerifier.class" \
-     && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/services" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/services/Service.class" -o "$PROJECT/termux/runtime-patches/nro/models/services/Service.class" \
-     && mkdir -p "$PROJECT/termux/runtime-patches/nro/models/data" "$PROJECT/termux/runtime-patches/nro/models/server" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/data/DataGame.class" -o "$PROJECT/termux/runtime-patches/nro/models/data/DataGame.class" \
-     && curl -fsSL "$PUBLIC_PAYLOAD_BASE/runtime-patches/nro/models/server/Controller.class" -o "$PROJECT/termux/runtime-patches/nro/models/server/Controller.class" \
+     && prepare_local_protocol_assets \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/start-panel.sh" -o "$PROJECT/termux/start-panel.sh" \
      && curl -fsSL "$PUBLIC_PAYLOAD_BASE/stop-panel.sh" -o "$PROJECT/termux/stop-panel.sh"; then
     chmod +x "$PROJECT/termux/start-existing-server.sh"
