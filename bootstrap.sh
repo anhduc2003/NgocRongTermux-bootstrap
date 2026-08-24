@@ -80,6 +80,8 @@ prepare_local_protocol_assets() {
     nro/models/services_func/LuckyRound.class
     nro/models/services/TaskService.class
     nro/models/services/SkillService.class
+    nro/models/mob/Mob.class
+    nro/models/Bot/BotAttackplayer.class
     nro/models/services_func/UseItem.class
     nro/models/server/Controller.class
     nro/models/npc/DuaHauEgg.class
