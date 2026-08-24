@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-MODE="${1:-install}"
+REQUESTED_MODE="${1:-install}"
+MODE="$REQUESTED_MODE"
 REPO="${GH_REPO:-anhduc2003/NgocRong-Termux}"
 CHECKOUT="${HOME}/ngocrong-github"
 PROJECT="${HOME}/nro-server"
@@ -13,6 +14,23 @@ on_error() {
   exit "$code"
 }
 trap on_error ERR
+
+runtime_is_complete() {
+  [ -s "$PROJECT/cc2.jar" ] || return 1
+  [ -s "$PROJECT/Config.properties" ] || return 1
+  [ -d "$PROJECT/data" ] || return 1
+  find "$PROJECT/data" -type f -size +0c -print -quit 2>/dev/null | grep -q .
+}
+
+if [ "$REQUESTED_MODE" = "--setup-or-start" ]; then
+  if runtime_is_complete; then
+    MODE="--start-only"
+    printf '%s\n' '[SetupOrStart] Runtime đã đủ (cc2.jar, Config.properties, data); bỏ qua setup và khởi chạy server.'
+  else
+    MODE="--install"
+    printf '%s\n' '[SetupOrStart] Runtime chưa đủ; chuyển sang setup đầy đủ rồi tự khởi chạy server.'
+  fi
+fi
 
 run_start_only_launcher() {
   local launcher="$1" launcher_log launcher_rc required_path
@@ -238,7 +256,7 @@ case "$MODE" in
     pkg install -y gh git curl coreutils aria2 || fail "pkg install thất bại."
     ;;
   *)
-    fail "Dùng --start-only để chỉ khởi động server đã cài, hoặc --install để cài mới."
+    fail "Dùng --setup-or-start để tự setup khi thiếu runtime hoặc khởi chạy runtime đã có; --start-only chỉ khởi động runtime đã cài; --install để cài mới."
     ;;
 esac
 
@@ -358,6 +376,20 @@ bash "$CHECKOUT/termux/auto-install-server.sh" --stop >/dev/null 2>&1 || true
 
 if [ "$MODE" = "--background" ]; then
   exec bash "$CHECKOUT/termux/auto-install-server.sh" --daemon
+fi
+
+if [ "$REQUESTED_MODE" = "--setup-or-start" ]; then
+  ALLOW_DESTRUCTIVE_IMPORT=no NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/auto-install-server.sh" --worker
+  printf '%s\n' '[SetupOrStart] Setup đầy đủ hoàn tất; đồng bộ launcher/patch và tiếp tục khởi chạy server.'
+  mkdir -p "$PROJECT/termux/lib" "$PROJECT/termux/runtime-patches"
+  refresh_local_launcher || fail "Setup đã xong nhưng không tải được launcher start-only để khởi chạy lại an toàn."
+  prepare_private_panel_source
+  prepare_local_jdbc_assets || fail "Setup đã xong nhưng không bổ sung được JAR JDBC tương thích."
+  prepare_local_protocol_assets || fail "Setup đã xong nhưng không bổ sung được runtime patch DragonBoy250."
+  prepare_local_panel_scripts || fail "Setup đã xong nhưng không bổ sung được launcher web panel."
+  run_start_only_launcher "$PROJECT/termux/start-existing-server.sh" \
+    || fail "Setup đã xong nhưng launcher khởi động lại thất bại; nguyên nhân đã được in ở trên."
+  exit 0
 fi
 
 NRO_PROJECT_DIR="$PROJECT" bash "$CHECKOUT/termux/auto-install-server.sh" --worker
