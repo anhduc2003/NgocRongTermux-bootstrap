@@ -133,6 +133,7 @@ prepare_local_protocol_assets() {
     nro/models/services/TaskService.class
     nro/models/services/SkillService.class
     nro/models/mob/Mob.class
+    nro/models/boss/ma_vuong_picolo/Pocolo.class
     nro/models/Bot/BotAttackplayer.class
     nro/models/services_func/UseItem.class
     nro/models/server/Controller.class
