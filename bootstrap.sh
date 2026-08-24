@@ -72,12 +72,15 @@ prepare_local_protocol_assets() {
     nro/models/network/Message.class
     nro/models/network/MySession.class
     nro/models/database/AmodsubVN.class
+    nro/models/data/DataGame.class
     nro/models/network/ClientVerifier.class
     nro/models/services/Service.class
     nro/models/services_func/Trade.class
     nro/models/services_func/TransactionService.class
+    nro/models/services_func/LuckyRound.class
+    nro/models/services/TaskService.class
+    nro/models/services/SkillService.class
     nro/models/services_func/UseItem.class
-    nro/models/data/DataGame.class
     nro/models/server/Controller.class
     nro/models/npc/DuaHauEgg.class
     nro/models/server/ServerManager.class
