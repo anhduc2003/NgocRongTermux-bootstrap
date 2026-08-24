@@ -21,3 +21,7 @@ The first full setup can take time because the private runtime archive may be la
 `--start-only` is an advanced, deliberately fail-closed mode. It only starts an already-installed runtime and does **not** download or reconstruct missing `cc2.jar`, `Config.properties`, or `data/`. Therefore, it is expected to stop with a “runtime chưa được cài hoàn chỉnh” message when those files are absent.
 
 For normal use, always use the complete `curl ... | bash` command above; it automatically performs the same `--setup-or-start` check. The full setup keeps the database schema name `ngocrong`; it does not perform a destructive SQL import when that database already contains tables. As part of a full setup, the runtime project directory may be rebuilt when required, while the established database is protected by the installer's import guard.
+
+## Refreshing DragonBoy250 combat patches
+
+Every start-only run now downloads the newest public DragonBoy250 protocol classes before starting Java, even when `~/ngocrong-github` or `~/nro-server/termux` already contains an older checkout. This prevents a stale `Mob.class` from replacing the corrected damage packet. The launcher prints the SHA-256 of the applied `Mob.class` in the Termux console. Do not start an old copied `cc2.jar` directly if you want the public compatibility patches; start it through the bootstrap command above.

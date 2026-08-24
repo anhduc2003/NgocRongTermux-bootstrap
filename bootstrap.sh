@@ -183,14 +183,19 @@ prepare_local_protocol_assets() {
   for asset in "${assets[@]}"; do
     target="$PROJECT/termux/runtime-patches/$asset"
     mkdir -p "$(dirname "$target")"
+    source_url="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}/runtime-patches/$asset"
+    temp_target="$target.download"
+    printf '[StartOnly] Đang đồng bộ patch DragonBoy250 mới nhất: %s\n' "$asset"
+    if curl -fsSL "$source_url" -o "$temp_target" && [ -s "$temp_target" ]; then
+      mv -f "$temp_target" "$target"
+      continue
+    fi
+    rm -f "$temp_target"
     if [ -s "$CHECKOUT/termux/runtime-patches/$asset" ]; then
       cp -f "$CHECKOUT/termux/runtime-patches/$asset" "$target"
       continue
     fi
-    source_url="${NRO_PUBLIC_PAYLOAD_BASE:-https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/start-only}/runtime-patches/$asset"
-    printf '[StartOnly] Đang bổ sung patch DragonBoy250: %s\n' "$asset"
-    curl -fsSL "$source_url" -o "$target" || return 1
-    [ -s "$target" ] || return 1
+    return 1
   done
 }
 

@@ -210,7 +210,11 @@ for patch in "${PROTOCOL_PATCHES[@]}"; do
 done
 jar uf "$PROJECT/cc2.jar" "${jar_args[@]}" \
   || fail "Không thể cập nhật patch protocol DragonBoy250 vào cc2.jar."
-info "Đã áp dụng patch handshake/server-list/resource DragonBoy250."
+if command -v sha256sum >/dev/null 2>&1; then
+  info "Đã áp dụng patch DragonBoy250 mới nhất; Mob.class SHA-256=$(sha256sum "$PROTOCOL_PATCH_DIR/nro/models/mob/Mob.class" | awk '{print $1}')"
+else
+  info "Đã áp dụng patch DragonBoy250 mới nhất."
+fi
 
 socket_ping() {
   mariadb-admin --no-defaults --socket="$SOCKET" -u root ping >/dev/null 2>&1 \
