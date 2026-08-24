@@ -87,6 +87,11 @@ run_start_only_launcher() {
     done
     printf '[ERROR] Log launcher: %s\n' "$launcher_log" >&2
     tail -100 "$launcher_log" >&2 || true
+    if [ ! -s "$PROJECT/cc2.jar" ] || [ ! -s "$PROJECT/Config.properties" ] || [ ! -d "$PROJECT/data" ]; then
+      printf '%s\n' '[HƯỚNG DẪN] Bạn đang dùng --start-only nhưng runtime chưa được cài đầy đủ.' >&2
+      printf '%s\n' '[HƯỚNG DẪN] Hãy chạy lệnh setup-or-start bên dưới để tự tải/cài rồi khởi động:' >&2
+      printf '%s\n' 'curl -fsSL https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/bootstrap.sh | bash -s -- --setup-or-start' >&2
+    fi
     return "$launcher_rc"
   fi
   return 0
