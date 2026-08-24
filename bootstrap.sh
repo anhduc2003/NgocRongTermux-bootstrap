@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-REQUESTED_MODE="${1:-install}"
+# No-argument execution is the beginner-safe unified path. Explicit modes remain supported.
+REQUESTED_MODE="${1:---setup-or-start}"
 MODE="$REQUESTED_MODE"
 REPO="${GH_REPO:-anhduc2003/NgocRong-Termux}"
 CHECKOUT="${HOME}/ngocrong-github"
