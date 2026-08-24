@@ -91,6 +91,8 @@ prepare_local_protocol_assets() {
     nro/models/network/MySession.class
     nro/models/database/AmodsubVN.class
     nro/models/data/DataGame.class
+    nro/models/data/ResultSetImpl.class
+    nro/models/database/EventDAO.class
     nro/models/network/ClientVerifier.class
     nro/models/services/Service.class
     nro/models/services_func/Trade.class

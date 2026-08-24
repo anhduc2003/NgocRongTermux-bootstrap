@@ -14,6 +14,8 @@ The command checks `~/nro-server/cc2.jar`, `Config.properties`, and non-empty `d
 
 The first full setup can take time because the private runtime archive may be large. If Termux asks for GitHub authorization, complete the normal browser-based authorization flow; do not enter a GitHub password into a script or command.
 
+**Important:** do not paste the `https://raw.githubusercontent.com/.../bootstrap.sh` URL by itself at the `$` prompt. A raw URL alone is not a shell command and causes `No such file or directory`. Copy the complete `curl ... | bash -s -- --setup-or-start` command shown above, including the pipe and mode argument.
+
 ## Important: do not use start-only for first setup
 
 `--start-only` is an advanced, deliberately fail-closed mode. It only starts an already-installed runtime and does **not** download or reconstruct missing `cc2.jar`, `Config.properties`, or `data/`. Therefore, it is expected to stop with a “runtime chưa được cài hoàn chỉnh” message when those files are absent.
