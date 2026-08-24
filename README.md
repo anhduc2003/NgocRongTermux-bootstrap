@@ -10,7 +10,7 @@ For a new Termux installation, or whenever the server runtime may be incomplete,
 curl -fsSL https://raw.githubusercontent.com/anhduc2003/NgocRongTermux-bootstrap/main/bootstrap.sh | bash
 ```
 
-The command checks `~/nro-server/cc2.jar`, `Config.properties`, and non-empty `data/`. If any required runtime asset is missing, it authenticates GitHub when necessary, resumes the existing download workflow, runs the full private installer, preserves an existing non-empty `ngocrong` database by the installer's import guard, then synchronizes the public launcher and DragonBoy250 patches before starting the game server and panel. If the runtime is complete, it skips the full setup and starts the existing server directly.
+The command checks `~/nro-server/cc2.jar`, `Config.properties`, and non-empty `data/`. It also recognizes an already-extracted runtime under `~/nro-server/cc2/`, `~/ngocrong-github/`, or `~/ngocrong-github/cc2/`; when found, it reuses that runtime, normalizes it into `~/nro-server/`, and does not download or extract the archive again. If any required runtime asset is missing, it authenticates GitHub when necessary, resumes the existing download workflow, runs the full private installer, preserves an existing non-empty `ngocrong` database by the installer's import guard, then synchronizes the public launcher and DragonBoy250 patches before starting the game server and panel. If the runtime is complete, it skips the full setup and starts the existing server directly.
 
 The first full setup can take time because the private runtime archive may be large. If Termux asks for GitHub authorization, complete the normal browser-based authorization flow; do not enter a GitHub password into a script or command.
 

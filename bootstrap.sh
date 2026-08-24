@@ -7,6 +7,7 @@ MODE="$REQUESTED_MODE"
 REPO="${GH_REPO:-anhduc2003/NgocRong-Termux}"
 CHECKOUT="${HOME}/ngocrong-github"
 PROJECT="${HOME}/nro-server"
+RUNTIME_ROOT=""
 
 fail() { printf '\n[ERROR] %s\n' "$*" >&2; exit 1; }
 on_error() {
@@ -16,15 +17,45 @@ on_error() {
 }
 trap on_error ERR
 
+find_valid_runtime_root() {
+  local candidate
+  for candidate in \
+    "$PROJECT" \
+    "$PROJECT/cc2" \
+    "$HOME/ngocrong-github" \
+    "$HOME/ngocrong-github/cc2"; do
+    [ -s "$candidate/cc2.jar" ] || continue
+    [ -s "$candidate/Config.properties" ] || continue
+    [ -d "$candidate/data" ] || continue
+    find "$candidate/data" -type f -size +0c -print -quit 2>/dev/null | grep -q . || continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
+  return 1
+}
+
 runtime_is_complete() {
-  [ -s "$PROJECT/cc2.jar" ] || return 1
-  [ -s "$PROJECT/Config.properties" ] || return 1
-  [ -d "$PROJECT/data" ] || return 1
-  find "$PROJECT/data" -type f -size +0c -print -quit 2>/dev/null | grep -q .
+  RUNTIME_ROOT="$(find_valid_runtime_root 2>/dev/null || true)"
+  [ -n "$RUNTIME_ROOT" ]
+}
+
+normalize_existing_runtime() {
+  [ -n "$RUNTIME_ROOT" ] || return 0
+  [ "$RUNTIME_ROOT" = "$PROJECT" ] && return 0
+  printf '[SetupOrStart] Phát hiện runtime đã giải nén tại %s; không tải/giải nén lại.\n' "$RUNTIME_ROOT"
+  mkdir -p "$PROJECT/data" "$PROJECT/logs" "$PROJECT/lib" "$PROJECT/termux"
+  cp -f "$RUNTIME_ROOT/cc2.jar" "$PROJECT/cc2.jar"
+  cp -f "$RUNTIME_ROOT/Config.properties" "$PROJECT/Config.properties"
+  cp -a "$RUNTIME_ROOT/data/." "$PROJECT/data/"
+  [ -d "$RUNTIME_ROOT/lib" ] && cp -a "$RUNTIME_ROOT/lib/." "$PROJECT/lib/"
+  [ -d "$RUNTIME_ROOT/termux" ] && cp -a "$RUNTIME_ROOT/termux/." "$PROJECT/termux/"
+  [ -d "$RUNTIME_ROOT/panel" ] && cp -a "$RUNTIME_ROOT/panel" "$PROJECT/panel"
+  RUNTIME_ROOT="$PROJECT"
 }
 
 if [ "$REQUESTED_MODE" = "--setup-or-start" ]; then
   if runtime_is_complete; then
+    normalize_existing_runtime
     MODE="--start-only"
     printf '%s\n' '[SetupOrStart] Runtime đã đủ (cc2.jar, Config.properties, data); bỏ qua setup và khởi chạy server.'
   else
